@@ -74,6 +74,14 @@ class _ScreenDetailState extends State<ScreenDetail> {
             "Detail",
             style: TextStyle(color: Colors.black), // Contrast text color
           ),
+          leading: IconButton(
+            onPressed: () async {
+              var wishLists = await WishListHelper.readModelsFromFile();
+
+              Navigator.pop(context, wishLists);
+            },
+            icon: const Icon(Icons.arrow_back),
+          ),
           surfaceTintColor: Colors.white,
           flexibleSpace: FlexibleSpaceBar(
             titlePadding: const EdgeInsets.only(top: 16, left: 20, right: 20),

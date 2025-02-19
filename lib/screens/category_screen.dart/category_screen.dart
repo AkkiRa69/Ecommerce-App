@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:grid_practice/models/product_model.dart';
+import 'package:grid_practice/routes/routes.dart';
 import 'package:grid_practice/screens/detail_screen/screen_detail.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -25,7 +26,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pushNamed(context, Routes.cart);
             },
             icon: const Icon(Icons.shopping_cart),
           ),
@@ -83,19 +84,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
             height: 150,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Hero(
-                tag: item.imageUrl,
-                child: CachedNetworkImage(
-                  imageUrl: item.imageUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Container(),
-                  ),
-                  errorWidget: (context, url, error) => GestureDetector(
-                    onTap: () {},
-                    child: const Icon(Icons.error),
-                  ),
+              child: CachedNetworkImage(
+                imageUrl: item.imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Container(),
+                ),
+                errorWidget: (context, url, error) => GestureDetector(
+                  onTap: () {},
+                  child: const Icon(Icons.error),
                 ),
               ),
             ),

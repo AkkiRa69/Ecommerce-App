@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bounceable/flutter_bounceable.dart';
 import 'package:grid_practice/constants/app_image.dart';
 import 'package:grid_practice/ds/coupons_code.dart';
+import 'package:grid_practice/helpers/login_helper.dart';
+import 'package:grid_practice/helpers/order_helper.dart';
 import 'package:grid_practice/models/coupon_model.dart';
 import 'package:grid_practice/models/product_model.dart';
 import 'package:grid_practice/routes/routes.dart';
 import 'package:grid_practice/screens/map_screen/map_screen.dart';
 import 'package:grid_practice/widgets/app_modal.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ignore: must_be_immutable
 class BuyNowScreen extends StatefulWidget {
@@ -30,10 +34,26 @@ class _BuyNowScreenState extends State<BuyNowScreen> {
   int discount = 0;
   double subtotal = 0, total = 0, discountPrice = 0;
   List<CouponModel> couponsList = [];
+  bool isOrder = false;
+  bool isReceived = false;
+  int userId = 0;
+  String invoiceId = '';
+
+  void getUserID() async {
+    var pref = await SharedPreferences.getInstance();
+    var username = pref.getString('username') ?? "";
+    var data = await LoginHelper.getUserDetails(username);
+    setState(() {
+      userId = data?['user_id'] ?? 0;
+      print(userId.toString());
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    getUserID();
+    invoiceId = "INV-${DateTime.now().microsecondsSinceEpoch}";
     couponsList = coupons
         .map(
           (e) => CouponModel.fromJSON(e),
@@ -62,35 +82,112 @@ class _BuyNowScreenState extends State<BuyNowScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Row(
         children: [
-          Text(
-            widget.data.currency +
-                widget.data.priceSign +
-                (total.toStringAsFixed(2)).toString(),
-            style: const TextStyle(
-              fontSize: 20,
+          isOrder
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isReceived ? "COMPLETE" : "PROCESS",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isReceived ? Colors.green : Colors.amber,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 6,
+                    ),
+                    Text(
+                      DateFormat('hh:mm a, dd MMM yyyy').format(DateTime.now()),
+                      style: const TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                )
+              : Text(
+                  widget.data.currency +
+                      widget.data.priceSign +
+                      (total.toStringAsFixed(2)).toString(),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+          const Spacer(),
+          isOrder ? _buildButtonMark() : _buildButtonOrder(),
+        ],
+      ),
+    );
+  }
+
+  Bounceable _buildButtonOrder() {
+    return Bounceable(
+      onTap: () async {
+        setState(() {
+          isOrder = true;
+        });
+        await OrderHelper.saveOrderBuyNow(
+          widget.data,
+          _address,
+          invoiceId,
+          userId,
+        );
+      },
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: const Center(
+          child: Text(
+            "Place Order",
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const Spacer(),
-          Container(
-            height: 50,
-            width: 150,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: const Center(
-              child: Text(
-                "Place Order",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Bounceable _buildButtonMark() {
+    return Bounceable(
+      onTap: () async {
+        setState(() {
+          isReceived = true;
+        });
+        await OrderHelper.updateOrderStatus(invoiceId, 'complete', userId);
+      },
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: isReceived
+            ? BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(5),
+              )
+            : BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(
+                  color: Colors.black,
                 ),
               ),
+        child: Center(
+          child: Text(
+            !isReceived ? "Mark as Received" : "Completed",
+            style: TextStyle(
+              fontSize: 15,
+              color: isReceived ? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -98,12 +195,13 @@ class _BuyNowScreenState extends State<BuyNowScreen> {
   Widget _buildBody() {
     return CustomScrollView(
       slivers: [
-        const SliverAppBar(
+        SliverAppBar(
           pinned: true,
           backgroundColor: Colors.white,
           elevation: 0,
           surfaceTintColor: Colors.white,
-          title: Text("Orders"),
+          title: Text(invoiceId),
+          centerTitle: true,
         ),
         _buildSliverDivider(),
         SliverToBoxAdapter(

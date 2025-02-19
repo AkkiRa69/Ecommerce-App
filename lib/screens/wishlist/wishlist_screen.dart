@@ -124,10 +124,18 @@ class _WishlistScreenState extends State<WishlistScreen> {
           const Spacer(),
           Padding(
             padding: const EdgeInsets.only(bottom: 20),
-            child: SvgPicture.asset(
-              AppImage.cart02,
-              width: 30,
-              height: 30,
+            child: Bounceable(
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  Routes.cart,
+                );
+              },
+              child: SvgPicture.asset(
+                AppImage.cart02,
+                width: 30,
+                height: 30,
+              ),
             ),
           ),
         ],
@@ -174,14 +182,19 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   Bounceable buildWislistItem(BuildContext context, ProductModel item) {
     return Bounceable(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        var result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ScreenDetail(
                 data: item,
               ),
             ));
+        if (result != null) {
+          setState(() {
+            wishlistItem = result;
+          });
+        }
       },
       child: Column(
         children: [

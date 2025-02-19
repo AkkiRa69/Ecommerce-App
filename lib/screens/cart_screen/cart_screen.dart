@@ -163,14 +163,11 @@ class _CartScreenState extends State<CartScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
                 ),
-                child: Hero(
-                  tag: product.imageUrl,
-                  child: CachedNetworkImage(
-                    imageUrl: product.imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => const Center(
-                      child: CircularProgressIndicator(),
-                    ),
+                child: CachedNetworkImage(
+                  imageUrl: product.imageUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => const Center(
+                    child: CircularProgressIndicator(),
                   ),
                 ),
               ),
@@ -341,11 +338,11 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void pushToBuyNow() {
+  void pushToBuyNow() async {
     if (selectedProducts.isEmpty) {
       selectedProducts = cartItem;
     }
-    Navigator.push(
+    var result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => BuyNowScreen2(
@@ -353,5 +350,10 @@ class _CartScreenState extends State<CartScreen> {
         ),
       ),
     );
+    if (result != null) {
+      setState(() {
+        cartItem = result;
+      });
+    }
   }
 }

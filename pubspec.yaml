@@ -31,6 +31,7 @@ dependencies:
   intl: ^0.20.1
   geolocator: ^13.0.2
   lottie: ^3.3.1
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -44,6 +45,7 @@ flutter:
     - assets/
     - assets/debit/
     - assets/gif/
+    - assets/profile/
 
   fonts:
     - family: SpaceGrotesk

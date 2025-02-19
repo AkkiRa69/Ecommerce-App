@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bounceable/flutter_bounceable.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:grid_practice/helpers/login_helper.dart';
+import 'package:grid_practice/routes/routes.dart';
 import 'package:grid_practice/screens/login_screens/login_screen.dart';
+import 'package:grid_practice/screens/order_screen/order_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingScreen extends StatefulWidget {
@@ -16,6 +21,7 @@ class _SettingScreenState extends State<SettingScreen> {
   late double screenWidth;
   late double screenHeight;
   Map<String, dynamic> user = {};
+  File? profile;
 
   @override
   void initState() {
@@ -26,6 +32,8 @@ class _SettingScreenState extends State<SettingScreen> {
   void loadUser() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String username = prefs.getString('username') ?? '';
+    final String profileString = prefs.getString('profile') ?? '';
+    profile = File(profileString);
     user = await LoginHelper.getUserDetails(username) ?? {};
     setState(() {});
   }
@@ -49,7 +57,12 @@ class _SettingScreenState extends State<SettingScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Bounceable(
-              onTap: () {},
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  Routes.cart,
+                );
+              },
               child: SvgPicture.asset(
                 "assets/cart 02.svg",
                 height: 30,
@@ -77,22 +90,27 @@ class _SettingScreenState extends State<SettingScreen> {
                   Container(
                     width: screenWidth * 0.18,
                     height: screenWidth * 0.18,
+                    clipBehavior: Clip.hardEdge,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
                         width: 3,
                       ),
                     ),
-                    child: const Center(
-                      child: Text(
-                        "AKK",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          fontFamily: "Billa",
-                        ),
-                      ),
-                    ),
+                    child: profile == null
+                        ? const Center(
+                            child: Text(
+                              "AKK",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : Image.file(
+                            profile!,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                   const SizedBox(width: 20),
                   Column(
@@ -122,7 +140,13 @@ class _SettingScreenState extends State<SettingScreen> {
             ),
             const SizedBox(height: 20),
             Bounceable(
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (context) => const OrderScreen(),
+                    ));
+              },
               child: _buildListTitle(
                 image: "assets/bill.svg",
                 title: "My Orders",
@@ -154,6 +178,7 @@ class _SettingScreenState extends State<SettingScreen> {
                     await SharedPreferences.getInstance();
                 await prefs.remove('isLogin');
                 await prefs.remove('username');
+                await prefs.remove('profile');
                 Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(

@@ -113,7 +113,7 @@ class Add2Cart {
     }
   }
 
-// Helper function to get current quantity
+  // Helper function to get current quantity
   static Future<int> getCurrentQuantity(
       String productName, String selectedColor) async {
     final rawData = await _readRawData();
@@ -126,5 +126,19 @@ class Add2Cart {
     );
 
     return existingItem['quantity'] ?? 0;
+  }
+
+  // New function to remove multiple products
+  static Future<void> removeProducts(List<ProductModel> modelsToRemove) async {
+    final rawData = await _readRawData();
+
+    for (var model in modelsToRemove) {
+      rawData.removeWhere((item) =>
+          item['name'] == model.name &&
+          item['selected_color'] == model.selectedColor);
+    }
+
+    final file = await _getFile();
+    await file.writeAsString(jsonEncode(rawData));
   }
 }

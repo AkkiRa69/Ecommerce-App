@@ -4,12 +4,15 @@ import 'package:flutter_bounceable/flutter_bounceable.dart';
 import 'package:grid_practice/constants/app_image.dart';
 import 'package:grid_practice/ds/coupons_code.dart';
 import 'package:grid_practice/helpers/add_2_cart_helper.dart';
+import 'package:grid_practice/helpers/login_helper.dart';
+import 'package:grid_practice/helpers/order_helper.dart';
 import 'package:grid_practice/models/coupon_model.dart';
 import 'package:grid_practice/models/product_model.dart';
 import 'package:grid_practice/routes/routes.dart';
 import 'package:grid_practice/screens/map_screen/map_screen.dart';
 import 'package:grid_practice/widgets/app_modal.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ignore: must_be_immutable
 class BuyNowScreen2 extends StatefulWidget {
@@ -25,7 +28,7 @@ class BuyNowScreen2 extends StatefulWidget {
 }
 
 class _BuyNowScreen2State extends State<BuyNowScreen2> {
-  var _address = '';
+  var _address = 'Current address';
   String phone = '', couponCode = '';
   int discount = 0;
   List<int> qtys = [];
@@ -33,9 +36,24 @@ class _BuyNowScreen2State extends State<BuyNowScreen2> {
   List<CouponModel> couponsList = [];
   bool isOrder = false;
   bool isReceived = false;
+  int userId = 0;
+  String invoiceId = '';
+
+  void getUserID() async {
+    var pref = await SharedPreferences.getInstance();
+    var username = pref.getString('username') ?? "";
+    var data = await LoginHelper.getUserDetails(username);
+    setState(() {
+      userId = data?['user_id'] ?? 0;
+      print(userId.toString());
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    getUserID();
+    invoiceId = "INV-${DateTime.now().microsecondsSinceEpoch}";
     couponsList = coupons
         .map(
           (e) => CouponModel.fromJSON(e),
@@ -69,12 +87,12 @@ class _BuyNowScreen2State extends State<BuyNowScreen2> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "PROCESS",
+                    Text(
+                      isReceived ? "COMPLETE" : "PROCESS",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.amber,
+                        color: isReceived ? Colors.green : Colors.amber,
                       ),
                     ),
                     const SizedBox(
@@ -106,10 +124,17 @@ class _BuyNowScreen2State extends State<BuyNowScreen2> {
 
   Bounceable _buildButtonOrder() {
     return Bounceable(
-      onTap: () {
+      onTap: () async {
         setState(() {
           isOrder = true;
         });
+        await Add2Cart.removeProducts(widget.data);
+        await OrderHelper.saveOrder(
+          widget.data,
+          _address,
+          invoiceId,
+          userId,
+        );
       },
       child: Container(
         height: 50,
@@ -134,10 +159,11 @@ class _BuyNowScreen2State extends State<BuyNowScreen2> {
 
   Bounceable _buildButtonMark() {
     return Bounceable(
-      onTap: () {
+      onTap: () async {
         setState(() {
           isReceived = true;
         });
+        await OrderHelper.updateOrderStatus(invoiceId, 'complete', userId);
       },
       child: Container(
         height: 50,
@@ -171,13 +197,20 @@ class _BuyNowScreen2State extends State<BuyNowScreen2> {
   Widget _buildBody() {
     return CustomScrollView(
       slivers: [
-        const SliverAppBar(
+        SliverAppBar(
           pinned: true,
           backgroundColor: Colors.white,
           elevation: 0,
           surfaceTintColor: Colors.white,
-          title: Text("Orders"),
+          title: Text(invoiceId),
           centerTitle: true,
+          leading: IconButton(
+            onPressed: () async {
+              List<ProductModel> items = await Add2Cart.readModelsFromFile();
+              Navigator.pop(context, items);
+            },
+            icon: const Icon(Icons.arrow_back),
+          ),
         ),
         _buildSliverDivider(),
         SliverToBoxAdapter(

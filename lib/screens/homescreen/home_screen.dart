@@ -91,7 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return SliverAppBar(
       expandedHeight: 300.0,
       pinned: true,
-      floating: true,
       backgroundColor: Colors.white,
       title: Row(
         children: [
@@ -332,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTypeList(ProductTypeModel item) {
     return Column(
       children: [
-        InkWell(
+        GestureDetector(
           onTap: () {
             Navigator.push(
               context,
